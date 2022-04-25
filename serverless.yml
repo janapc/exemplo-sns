@@ -1,0 +1,57 @@
+service: newsletter
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: ${opt:stage,'dev'}
+  region: ${opt:region, 'us-east-1'}
+  environment:
+    SNS_ENDPOINT_LOCAL: "http://127.0.0.1:4002"
+    SNS_TOPIC_SEND_NEWSLETTER: "${self:service}-${self:provider.stage}-sns-send-newsletter"
+    MAIL_HOST: "SEU_HOST"
+    MAIL_PORT: SUA_PORT
+    MAIL_USER: "SEU_USUARIO"
+    MAIL_PASS: "SUA_SENHA"
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - SNS:Publish
+      Resource: "*"
+
+custom:
+  serverless-offline-sns:
+    port: 4002
+    debug: false
+  sns_arn:
+    send_newsletter:
+      local: "arn:aws:sns:us-east-1:123456789012:${self:provider.environment.SNS_TOPIC_SEND_NEWSLETTER}"
+      dev: { "Fn::Join" : ["", ["arn:aws:sns:${self:provider.region}:", { "Ref" : "AWS::AccountId" }, ":${self:provider.environment.SNS_TOPIC_SEND_NEWSLETTER}" ] ]  }
+    
+resources:
+  Resources:
+    sendNewslatter:
+      Type: AWS::SNS::Topic
+      Properties:
+        TopicName: "${self:provider.environment.SNS_TOPIC_SEND_NEWSLETTER}"
+
+functions:
+  send-email:
+    handler: functions/send-email.handler
+    events:
+      - sns: 
+          arn: "${self:custom.sns_arn.send_newsletter.${self:provider.stage}}"
+          topicName: "${self:provider.environment.SNS_TOPIC_SEND_NEWSLETTER}"
+
+  publish-newsletter:
+    handler: functions/publish-newsletter.handler
+    events:
+      - http:
+          path: publish-newsletter
+          method: post
+    environment:
+      SNS_ARN: "${self:custom.sns_arn.send_newsletter.${self:provider.stage}}"
+
+plugins:
+  - serverless-offline
+  - serverless-offline-sns
