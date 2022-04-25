@@ -22,7 +22,7 @@ module.exports.handler = async (event) => {
 
     await sns.publish(params).promise();
 
-    console.log("PUBLISH_NEWSLATTER");
+    console.log("PUBLISH_NEWSLETTER");
 
     return {
       statusCode: 200,

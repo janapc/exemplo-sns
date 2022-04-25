@@ -30,7 +30,7 @@ custom:
     
 resources:
   Resources:
-    sendNewslatter:
+    sendNewsletter:
       Type: AWS::SNS::Topic
       Properties:
         TopicName: "${self:provider.environment.SNS_TOPIC_SEND_NEWSLETTER}"
